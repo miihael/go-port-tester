@@ -185,6 +185,7 @@ func main() {
 	var proto = flag.String("proto", "tcp", "Protocol (tcp/udp)")
 	var sleep = flag.Int("sleep", 30, "Time to sleep after checks")
 	var delay = flag.Int("delay", 15, "Time to sleep before starting checks")
+	var noListen = flag.Bool("no-listen", false, "Do not start local servers, only check remote")
 	flag.Parse()
 	if *port == 0 {
 		log.Fatal("Please specify port")
@@ -196,16 +197,17 @@ func main() {
 	var s Server
 	var err error
 	q := make(chan bool)
-	go func() {
-		s, err = NewServer(*proto, fmt.Sprintf(":%d", *port))
-		if err != nil {
-			log.Fatal("Error starting server on %d", *port)
-		}
-		s.Run(q)
-	}()
+	if !*noListen {
+		go func() {
+			s, err = NewServer(*proto, fmt.Sprintf(":%d", *port))
+			if err != nil {
+				log.Fatal("Error starting server on %d", *port)
+			}
+			s.Run(q)
+		}()
 
-	time.Sleep(time.Duration(*delay) * time.Second)
-
+		time.Sleep(time.Duration(*delay) * time.Second)
+	}
 	waitgroup.Add(flag.NArg())
 	for _, ip := range flag.Args() {
 		go checkPort(ip, *port, *proto, *timeout)
