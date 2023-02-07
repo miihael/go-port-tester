@@ -72,6 +72,7 @@ func (t *TCPServer) handleConnections(quit chan bool) (err error) {
 				err = errors.New("could not accept connection")
 				break
 			}
+			log.Printf("# incoming connection from %s", conn.RemoteAddr())
 
 			go t.handleConnection(conn)
 		}
@@ -183,6 +184,7 @@ func main() {
 	var port = flag.Int("port", 0, "Port to listen and check")
 	var timeout = flag.Int("timeout", 30, "Timeout for reply")
 	var proto = flag.String("proto", "tcp", "Protocol (tcp/udp)")
+	var bind = flag.String("bind", "", "Bind to specific IP, empty by default")
 	var sleep = flag.Int("sleep", 30, "Time to sleep after checks")
 	var delay = flag.Int("delay", 15, "Time to sleep before starting checks")
 	var noListen = flag.Bool("no-listen", false, "Do not start local servers, only check remote")
@@ -199,9 +201,9 @@ func main() {
 	q := make(chan bool)
 	if !*noListen {
 		go func() {
-			s, err = NewServer(*proto, fmt.Sprintf(":%d", *port))
+			s, err = NewServer(*proto, fmt.Sprintf("%s:%d", *bind, *port))
 			if err != nil {
-				log.Fatal("Error starting server on %d", *port)
+				log.Fatal("Error starting server on %s:%d", *bind, *port)
 			}
 			s.Run(q)
 		}()
